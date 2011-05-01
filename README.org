@@ -1,0 +1,43 @@
+#+TITLE:     Emacs Java Utils
+#+AUTHOR:    Dominik Burgdörfer
+#+EMAIL:     dominik.burgdoerfer@googlemail.com
+#+DATE:      2011-05-01 Sun
+#+DESCRIPTION: 
+#+KEYWORDS: 
+#+LANGUAGE:  en
+#+OPTIONS:   H:3 num:t toc:t \n:nil @:t ::t |:t ^:t -:t f:t *:t <:t
+#+OPTIONS:   TeX:t LaTeX:nil skip:nil d:nil todo:t pri:nil tags:not-in-toc
+#+INFOJS_OPT: view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+EXPORT_SELECT_TAGS: export
+#+EXPORT_EXCLUDE_TAGS: noexport
+#+LINK_UP:   
+#+LINK_HOME: 
+
+* Introduction
+  Welcome to Emacs java utils. This document should give you a brief introduction
+  about how to handle these tools to make java project creation in emacs easier.
+
+** What are those magic utils?
+   These utils are an attempt to make it easy to create and maintain Java Projects
+   in Emacs.
+
+   Some people think that eclipse is the only ide (editor) to maintain Java project.
+   But sorry I pretty hate eclipse and I really don't want to swap my lovely Emacs
+   against it only for programming java in university.
+
+   So I'm forced to find another solution. I know there is [[http://jdee.sourceforge.net][JDEE]], but this is not
+   an option: I don't like eclipse because I'm a minimalist and don't like fat ide's,
+   so I'm not interested in blowing up my emacs to similar level.
+
+   Well, this was the reason, why I wrote my own solution. The tiny java-utils.
+   A small collection of tools that help you to make your projects compatible
+   with those created by eclipse users.
+
+* Installation
+  Simply download the java-utils.el from github and put it somewhere Emacs can find it.
+
+  Then source it in your `.emacs' file.
+
+  #+BEGIN_SRC
+  (require 'java-utils)
+  #+END_SRC
