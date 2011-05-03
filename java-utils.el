@@ -16,9 +16,6 @@
   nil
   "The list with the classes of the java project")
 
-;; (defvar java-project-run-command
-;;   "")
-
 (defun java-project-save ()
   (interactive)
 
@@ -202,28 +199,85 @@
   (eclipse-export-project java-project-path))
 ;;(setq java-project-path (expand-file-name "~/Workspace/PIStuff/PvsBlatt01"))
 
+(defun java-project-xephyr-run ()
+  (interactive)
+
+  (unless (get-process "Xephyr")
+    (start-process "Xephyr" (with-current-buffer (get-buffer-create "*Xephyr*")
+                              (erase-buffer)
+                              (current-buffer))
+                   "Xephyr" ":1" "-ac" "-br"
+                   "-reset" "-terminate")))
+
+(defun java-project-xephyr-run-openbox ()
+  (interactive)
+
+  (let ((process-environment (cons "DISPLAY=:1" process-environment)))
+    (start-process "openbox" (with-current-buffer (get-buffer-create "*Xephyr*")
+                               (erase-buffer)
+                               (current-buffer)) "openbox")))
+
 (defun java-project-xephyr-run-class ()
   (interactive)
 
-  (let* ((class-path (java-project-read-class-path))
-         (class-package (car class-path))
-         (class-name (car (cdr class-path))))
+  (unless (boundp 'run-command)
+    (error "run-command not bound."))
 
-   (unless (boundp 'run-command)
-      (error "run-command not bound."))
+  ;; Be sure that a Xephyr server is running, otherwise
+  ;; launch one.
+  (unless (get-process "Xephyr")
+    (start-process "Xephyr" (with-current-buffer (get-buffer-create "*Xephyr*")
+                              (erase-buffer)
+                              (current-buffer))
+                   "Xephyr" ":1" "-ac" "-br"
+                   "-reset" "-terminate")
+    (let ((process-environment (cons "DISPLAY=:1" process-environment)))
+      (start-process "OpenBox" nil "openbox")))
 
-    ;; Be sure that a Xephyr server is running, otherwise
-    ;; launch one.
-    (unless (get-process "Xephyr")
-      (start-process "Xephyr" (with-current-buffer (get-buffer-create "*Xephyr*")
-                                (erase-buffer)
-                                (current-buffer))
-                     "Xephyr" ":1" "-ac" "-br"
-                     "-reset" "-terminate")
-      (let ((process-environment (cons "DISPLAY=:1" process-environment)))
-        (start-process "OpenBox" nil "openbox")))
+  (let ((process-environment (cons "DISPLAY=:1" process-environment)))
+    (start-process-shell-command "Java-App"
+                   (with-current-buffer (get-buffer-create "*Async Shell Command*")
+                     (erase-buffer)
+                     (current-buffer)) run-command)))
 
-    (async-shell-command (concat "DISPLAY=:1 " run-command))))
+(defun java-class-gen-get-set (c)
+  (interactive "sClass-name: ")
 
+  (lexical-let ((class-file (buffer-file-name))
+                (class-name c))
+    (with-current-buffer (get-buffer-create "*etags*")
+      (erase-buffer)
+
+      (let* ((process-connection-type nil)
+             (process (start-process "etags" (current-buffer)
+                                     "etags.emacs" "--no-globals"
+                                     (expand-file-name class-file)
+                                     "-o" "/dev/stdout")))
+        (set-process-sentinel
+         process
+         (lambda (process state)
+           (let ((class-buffer (current-buffer)))
+             (with-current-buffer (process-buffer process)
+               (beginning-of-buffer)
+               (let ((start (re-search-forward (format "\n%s,[0-9]+\npublic +class +%s"
+                                                       class-file class-name) nil t))
+                     (end (save-excursion
+                            (re-search-forward (format "\n.*,[0-9]+\npublic +class +") nil t))))
+                 (message "end: %s" start)
+                 (while (search-forward-regexp
+                         "^[ \t]+private *\\([A-Za-z0-9_]+ *\\[?\\]?\\) +\\([a-z0-9A-Z_]+\\)[^a-z0-9A-Z_(]"
+                         end t)
+                   (message "Test!!!")
+                   (let ((type (match-string 1))
+                         (name (match-string 2)))
+                     (with-current-buffer class-buffer
+                       (let ((min (point)))
+                         (insert (format "public %s get%s()\n{\nreturn %s;\n}\n\n"
+                                         type (upcase-initials name) name))
+                         (insert (format "public void set%s(%s %s)\n{\nthis.%s = %s;\n}\n\n"
+                                         (upcase-initials name) type name name name))
+
+                         (indent-region min (point)))))))))
+           (kill-buffer (process-buffer process))))))))
 
 (provide 'java-utils)
